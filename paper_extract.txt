@@ -1,0 +1,836 @@
+\n--- PAGE 1 ---\nReceivedOctober24,2019,acceptedNovember11,2019,dateofpublicationNovember14,2019,
+dateofcurrentversionDecember2,2019.
+DigitalObjectIdentifier10.1109/ACCESS.2019.2953542
+Global Stock Market Prediction Based on Stock
+Chart Images Using Deep Q-Network
+JINHOLEE ,RAEHYUNKIM ,YOOKYUNGKOH ,ANDJAEWOOKANG
+DepartmentofComputerScienceandEngineering,KoreaUniversity,Seoul02841,SouthKorea
+Correspondingauthor:JaewooKang(kangj@korea.ac.kr)
+ThisworkwassupportedbytheNationalResearchFoundationofKoreaunderGrantNRF-2017R1A2A1A17069645and
+GrantNRF-2017M3C4A7065887.
+ABSTRACT We applied Deep Q-Network with a Convolutional Neural Network function approximator,
+which takes stock chart images as input for making global stock market predictions. Our model not only
+yieldsprofitinthestockmarketofthecountrywhosedatawasusedfortrainingourmodelbutalsogenerally
+yieldsprofitinglobalstockmarkets.WetrainedourmodelonlyonUSstockmarketdataandtesteditonthe
+stockmarketdataof31differentcountriesover12years.Theportfoliosconstructedbasedonourmodel’s
+outputgenerallyyieldabout0.1to1.0percentreturnpertransactionpriortotransactioncostsinthestock
+marketsof31countries.Theresultsshowthatsomepatternsinstockchartimagesindicatethesamestock
+price movements across global stock markets. Moreover, the results show that future stock prices can be
+predictedevenifthemodelistrainedandtestedondatafromdifferentcountries.Themodelcanbetrained
+on the data of relatively large and liquid markets (e.g., US) and tested on the data of small markets. The
+resultsdemonstratethatartificialintelligencebasedstockpriceforecastingmodelscanbeusedinrelatively
+smallmarkets(emergingcountries)eventhoughsmallmarketsdonothaveasufficientamountofdatafor
+training.
+INDEXTERMS Artificialintelligence,finance,neuralnetworks,stockmarkets.
+I. INTRODUCTION technicalanalysis,whichinvolvesstudyingpaststockprices
+Predicting future stock prices has always been a contro- and volumes, to predict future stock prices and demon-
+versial research topic. In ‘‘Efficient Capital Markets [1],’’ strated its profitability[14],[15]. Other studies, especially
+EugeneFamaarguedthatthestockmarketishighlyefficient in the computer science field, have focused on discovering
+and the price always fully reflects all available informa- non-conventional signals that may help to predict the stock
+tion, which is referred to as the Efficient Market Hypoth- markets. Studies focused on discovering non-conventional
+esis (EMH). He also maintained that technical analysis or signals have analyzed Web data such as Social Networking
+fundamental analysis (or any analysis) would not yield any Service (SNS) messages [17], investors’ sentiments [18],
+consistent over-average profit to investors. However, not newsarticles[19],orsearchenginequeries[20],[21].These
+all researchers agreed with EMH [2]–[4]. Some classical studiesfoundthatinvestors’sentimentsfromSNSplatforms
+works in financial economics maintained that stock mar- andsearchqueryfrequencydataprovideusefulinformation
+ketshaveanomaliesandareprofitable,whichisinconsistent forpredictingfuturestockprices.
+with EMH [5]–[10]. Also, there was some criticism of the One of the other approaches to predicting future stock
+argument that stock markets are inefficient and profitable. pricesinthecomputersciencefieldistobuildartificialintel-
+Studies that asserted stock markets are profitable and have ligence based models that use machine learning techniques
+anomalies were criticized for not considering all transac- suchasNeuralNetwork(NN)[22]orReinforcementLearn-
+tion costs [11]–[13]. EMH is still the subject of intense ing(RL)[23].NNandRLarecurrentlyamongthemostcom-
+debate. Many following studies focused on demonstrating monlyusedmachinelearningmethods.Manystate-of-the-art
+the profitability of stock markets. Some works have used methodsinvariousdomainssuchasnaturallanguageprocess-
+ing, image classification, and speech recognition are based
+The associate editor coordinating the review of this manuscript and upon Convolutional Neural Network (CNN) or Recurrent
+approvingitforpublicationwasAndreiMuller . NeuralNetwork(RNN)models.RLisalsoadoptedinmany
+167260 ThisworkislicensedunderaCreativeCommonsAttribution4.0License.Formoreinformation,seehttp://creativecommons.org/licenses/by/4.0/ VOLUME7,2019\n\n--- PAGE 2 ---\nJ.Leeetal.:GlobalStockMarketPredictionBasedonStockChartImagesUsingDQN
+domainssuchasroboticsandgameplaying.ThegoalofRLis and cultures tend to be similar for certain price/volume
+totrainanagenttochoosetheoptimalactiongiventhecurrent patterns.
+state. But unlike supervised learning where exact answers WeadopttheframeworkofDeepQ-Network(DQN)[33],
+are given to a model, an RL agent is trained to maximize which solves the instability problem which is caused by
+cumulativerewardsinthetrainingprocess.Abriefoverview usingnonlinearfunctionapproximatorswithQ-learning[34].
+of recent studies that used artificial intelligence models for Itusesthefollowingtwomethodstostabilizethetrainingpro-
+stockpredictionisprovidedbelow.Amoreextensivereview cess: experience replay and parameter freezing. We use the
+oftherecentstudiescanbefoundin[24],[25]. samemethodsinourtrainingprocess.Ourmodeltakeschart
+Takeuchi and Lee [26] applied a feedforward neural net- images of an individual company as input and chooses one
+worktoabasicmomentumstrategy[7]toenhanceprediction action among Long, Neutral, or Short every day. It receives
+performance. The authors reported that the performance of apositiveornegativerewardbasedonitsactionandthesub-
+theirproposedmodelonindividualUSstockmarketpredic- sequentpricechangeofacompany.Ourmodelistrainedto
+tion was better than that of the original momentum strat- selecttheactionthatwillyieldmaximumcumulativerewards
+egy. Krauss et al. [27] analyzed the performance of deep givenchartimages.
+neuralnetworks,gradientboostedtrees,randomforests,and WeusetheframeworkofDQNasopposedtoconventional
+ensembles of these methods in predicting the future prices supervisedlearningtoeffectivelytrainourNNmodelusing
+ofS&P500stocks.FischerandKrauss[28]foundthatLong RL for stock prediction. Using RL (Q-learning) instead of
+Short Term Memory (LSTM) [29] networks outperformed conventional supervised learning for the stock prediction
+deep neural networks and random forests. Deng et al. [30] problem has various advantages. First, our model is trained
+proposedanRNNbasedRLmodel,andatrainingalgorithm using rewards. Since we are dealing with the stock price
+whichaddressesthegradientvanishingproblem.Theauthors prediction problem, assigning binary labels (e.g., True or
+validated their model on Chinese stock index futures data, False) to actions is insufficient. For example, if a model
+commodity futures data, and S&P500 index data. All the decides to take a Long action, it is desirable to receive a
+above mentioned works used historical price data as input. 10.0 reward for a +10% subsequent price change and a
+However, other previous works directly used stock chart 1.5 reward for +1.5%. Only receiving True for both cases
+images as input. Tsai and Quan [31] used candlestick chart doesnotgiveanydistinctionbetweenthetwocases.Second,
+images to predict the Dow Jones Industrial Average Index. RL uses cumulative rewards, not just immediate rewards,
+Theauthorsusedamodelbasedonacontentimageretrieval to train an agent. In most stock price prediction problems,
+techniquetoautomaticallyextractfeaturesfromcandlestick supervised learning models are trained to predict the price
+chartimages.Guoetal.[32]proposedaCNNbasedmodel (or price change) of the next time step based on the infor-
+that predicts price movements based on candlestick charts. mation of the current time step. In supervised learning, it is
+All of these studies have demonstrated that among various quite difficult to consider the time steps following the next
+inputvariables,suchartificialintelligencebasedmodelseffi- time step. But RL can efficiently handle this problem by
+ciently capture complex non-linear patterns associated with maximizingcumulativerewardsusinginformationfromnot
+futurereturns.Butmostofthepreviousworksmainlyfocused only the next time step but from all subsequent time steps.
+onbuildingahighperformancemodeloptimizedonalimited Finally, in Q-learning, a trained model can make use of an
+number of securities or composite indexes only in a single actionvalue,whichistheexpectedcumulativerewardsofthe
+countryusingvariousinputvariablessuchasprice,volume, corresponding action. So when training is done, our model
+and technical and other financial indicators. In their works, notonlyknowswhichactiontotakebutalsocanpredictthe
+itwasnotdeterminedwhetherthesignalsorpatternsthatwere amount of profit the action will yield, which enables us to
+foundtoyieldprofitinagivencountrywouldyieldprofitin distinguishstrongpatternsfromweakones.WeuseCNNas
+othercountries.NopreviousworkcoulddesignanNNmodel the function approximator so that our model can take chart
+foremergingcountriesthatusuallydonothaveenoughdata imagesasinput.Sincefewpreviousworksusedchartimages
+fortrainingcomplexNNmodels. asinputinstockprediction[24],[25],webelieveconducting
+In our work, we mainly focus on finding patterns that furtherstudiesthatdirectlyusechartimagesasinputisnec-
+generallyyieldaprofitnotonlyinastockmarketofthesingle essary. Also, CNN is known to obtain good performance in
+country whose data is used for training our model but also numeroustasks[22]andcanbetrainedmuchfasterthanRNN
+inglobalstockmarkets.Forexample,letusassumethatour orLSTM.
+model learned some unique patterns from the training data Weconductednumerousexperimentsonglobalstockmar-
+of a single country, and the patterns indicate that the stock kets. For this work, only five years (Jan.2001-Dec.2005) of
+price will sharply go up. Then, we need to show that these USindividualstockdataareusedfortrainingandourmodel
+unique patterns consistently indicate the same future stock istestedonthestockmarketdataof31countriesover12years
+pricemovement(thatthestockpricewillrise)notonlyinthe (Jan.2006-Dec.2017)afterthetrainingperiod.Weonlyused
+stockmarketofthecountryinwhichourmodelwastrained the US stock data instead of the stock data of all other
+but also in many others. Interestingly, the results show that countriestotrainourmodeltoshowthatourmodelnotonly
+the investment activities of people from different countries yieldsprofitinthestockmarketofthecountrywhosedatais
+VOLUME7,2019 167261\n\n--- PAGE 3 ---\nJ.Leeetal.:GlobalStockMarketPredictionBasedonStockChartImagesUsingDQN
+usedfortrainingbutalsoinotherglobalmarkets.Themain C. DEEPQ-NETWORK
+contributions of our paper are as follows. First, as shown Whenstaterepresentationissimple,theoriginalQ-learning
+by the experimental results, we found that there are some algorithm is proven to converge at optimal behavior. But
+patterns in stock chart images, which not only yield profit like in Deep Q-Network (DQN), if the current state is very
+inasinglecountrybutinmostoftheothercountiesaswell. complexandcannotberepresentedintablelookupform,one
+Second, unlike most of the previous works, our model does can use the function approximator to efficiently represent
+notneedtobetrainedandtestedondatafromthesamemarket the state. The function approximator could be any type of
+orcountry.Forexample,itispossibletouseUSstockmarket functionthatmapsrawstaterepresentationstoactions.Inour
+datafortraininganNNmodelforSpainorTaiwan.Thismay case,CNNisusedasthefunctionapproximatorformapping
+help an artificial intelligence based stock price prediction astaterepresentation(stockchartimage)toaLong,Neutral,
+models to be more widely used in emerging markets, some orShortaction.Butnaivelyimplementinganon-linearfunc-
+of which are inefficient and have an insufficient amount of tion approximator such as NN is known to be ineffective in
+data for training models. As the results show, even though real practice because the training process is unstable. DQN
+our model is trained only on the US individual stock data, addresses this problem using the following two methods:
+it generally yields a considerable amount of profit in other experiencereplayandparameterfreezing.Experiencereplay
+countries.Finally,tothebestofourknowledge,ourartificial is a way to reduce correlations in the sequence of data by
+intelligencebasedmodel,whichistrainedonthedataofonly storingthelatestM experiences(inputdata)inthememory
+asinglecountry,isthefirsttoobtainnumeroustestingresults bufferandsamplingrandombatchesfromthememorybuffer
+onglobalstockmarkets. at every iteration to take the gradient step. The parameter
+freezing method temporarily freezes the target parameters
+during training. To reduce correlations with the target, two
+II. BACKGROUND
+sets of parameters are maintained and the target network
+A. CONVOLUTIONALNEURALNETWORK
+parametersareupdatedperiodically.
+Deep learning and NNs are currently the most widely used
+machine learning methods for classifying highly non-linear
+patterns. CNN is one of the NN architectures that was suc-
+III. METHOD
+cessfully applied to image classification problems. Many
+A. OVERVIEW
+state-of-the-art image classification models are based upon
+Inthissubsection,abriefoverviewofourmodelisprovided.
+CNN architecture. Such models usually take 2D images as
+Fig. 1 illustrates how our CNN reads input and outputs
+inputwiththreecolorchannels.Theinputispassedtomul-
+action values for an individual company. The term action
+tiple hidden layers. Typically, each hidden layer consists of
+valuereferstotheexpectedcumulativerewardsofanaction.
+convolutional layers followed by non-linearity and pooling
+Fig.1(a)showsthearchitectureofourCNN.Fig.1(b)illus-
+layers.Butinthelastoneortwohiddenlayers,usuallyfully
+tratesexampleofaW byW chartimageattimet andtime
+connected(FC)layersareusedwithasoftmaxfunction.The
+t+1.Forexample,ifW equals8asshowninthisfigure,our
+finaloutputisusuallyaone-hotvectorthatcorrespondstothe
+CNNreadsinputasan8by8matrixwithallelementsfilled
+labeloftheinputimage.Notethatinourwork,weuseCNN
+with0or1.Asinglecolumninthismatrixrepresentsasingle
+asafunctionapproximatorintheQ-learningalgorithm.
+day. Elements filled with the color black corresponds to 1;
+otherwise,theyareall0.Thetoppartofthematrixrepresents
+B. Q-LEARNING therelativevalueoftheclosingpriceandthelowerhalfrepre-
+Q-learning is one of the most common RL algorithms. The sentstherelativevalueofthevolume.Tworowsinthemiddle
+goalofallRLalgorithmsistoenableanagenttolearnoptimal of the chart are empty (has zero value) to help our CNN to
+policies,orinotherwords,trainanagentsothatitiscapable distinguish price from volume. Fig. 1 (c) shows sequential
+ofchoosingtheactionthatwouldgivemaximumcumulative chartof39consecutivedays.Inthisfigure,allpricevolume
+rewards in a given state. In Q-learning, an agent does not dataaremin-maxnormalizedover39daysforvisualization.
+directlylearnoptimalpolicies;instead,anagentistrainedto In other words, for price data, the highest price in 39 days
+acquiretheoptimalactionvaluewhichistheexpectedcumu- is listed in the first row, and the lowest price is provided in
+lativerewardsofeachactiongiventhecurrentstate.Sowhen thethirdrow;however,thisisonlyforvisualizationpurposes.
+training is done, the optimal policy of an agent is simply a Inouractualexperiments,inputdataaremin-maxnormalized
+greedy policy where an agent chooses the action with the overW days(horizontalsizeofchart),andarenotmin-max
+maximumactionvaluegiventhestate.Toobtaintheoptimal normalizedovertheentireexperimentalperiod.
+action value, an agent should iteratively update the action As shown in Fig. 1, our CNN takes a W by W chart
+value using the Bellman Equation. An agent chooses action image as input at each time step t, which shows the daily
+giventhecurrentstatefollowingbehaviorpolicyandobserves closingpriceandvolumedataofasinglecompanyoverthe
+reward and next state. Usually, in Q-learning, the (cid:15) -greedy lastW days.Attimet,ourCNNoutputstwovectorswitha
+policy is used as a behavior policy, where an agent either lengthof3:ρandη.Basedonthesevectors,theaction(Long,
+choosesarandomactionwithprobability(cid:15) oractsgreedily. Neutral, or Short) to take at time t is decided. Likewise,
+167262 VOLUME7,2019\n\n--- PAGE 4 ---\nJ.Leeetal.:GlobalStockMarketPredictionBasedonStockChartImagesUsingDQN
+FIGURE1. OverviewofhowourCNNreadsaninputchartofasinglecompanyataspecifictimepoint(timet)andoutputsthetwo
+vectorsρandη.
+at time t + 1 (or the next day), our CNN in Fig. 1 reads a amax-poolinglayerwitha2×2filterandstride2isapplied.
+stock chart image at time t + 1 and decides which action ThelasttwohiddenlayersareFClayerswith2048×32and
+to take at time t + 1. The action value vector ρ represents 32×3parameters,respectively,followedbyReLUexceptfor
+an action value which is the expected cumulative rewards thefinallayer.Thebatchnormalization[35]layerisaddedin
+of an action (Long, Neutral, or Short). One hot vector η is everylayerrightbeforeReLU.Theparametersareinitialized
+marked as 1 in the same index where ρ has the maximum usingXavierinitialization[36].Thesoftmaxfunctionisnot
+actionvalue;otherwise,itismarkedas0.Eachelementofthe implementedsincetheoutputofourCNNisanactionvalue,
+vectorsrepresentsLong,Neutral,orShortactionrespectively. notaprobabilitydistributionbetween0and1.
+Thus, for example, the value of ρ[3] at time t denotes the
+expected cumulative rewards if our CNN takes the Short
+C. DATADESCRIPTION
+actionattimet.Forsimplicity,westandardizedtheindexof
+WecollecteddailyclosingpriceandvolumedatafromYahoo
+allvectorsinthispapertostartfromone.Tosumup,theway
+Finance.ButYahooFinancedoesnotprovidethelistofcom-
+inwhichourCNNoperatesissimple.Itreadsachartattimet
+paniesthatcanbedownloadfromthewebsite,weobtained
+andchoosestheactionwhichhasthemaximumactionvalue.
+the list of companies of roughly 40 countries including
+Attimet+1,itreceivesrewardbasedontheactionattimet
+mostofthedevelopedmarketsfromhttp://investexcel.net/all-
+andthepricechangefromtimet tot +1.Ittakesactionat
+yahoo-finance-stock-tickers/. Only for US, we used the list
+timet+1inthesamewayitdoesattimet.
+ofcompaniesofRussell3000index(Thefirsthalfof2018).
+We downloaded the adjusted closing price data to reflect
+B. NETWORKARCHITECTURE events such as stock splits. Countries that did not have
+Our CNN takes 32 × 32 × 1 as input. The input has only enough valid data were excluded. The data of 30 countries
+1channelbecauseitdoesnotneedtobecolored.Theexact collectedover12yearsanddataofonecountry(US)collected
+architecture of our CNN is as follows. Our CNN has six over 17 years were downloaded. In each country, we also
+hiddenlayers.Thereby,Hequals6inFig.1(a).Thefirstfour eliminated companies with noisy data. First, we eliminated
+hiddenlayersareconvolutionallayersfollowedbyaRectifier companiesthathadnopricedata.Second,wealsoeliminated
+non-LinearityUnit(ReLU)andthelasttwohiddenlayersare companies that had an excessive number of days with zero
+FClayers.IntheFClayers,ReLUisimplementedonlyafter volume(weeliminatedthecompaniesthathadzerovolume
+the fifth layer. Each of the first four hidden layers consists for more than 25% of the entire testing period). Strictly
+of16filtersofsize5×5×1,16filtersofsize5×5×16, speaking,manydaysofzerovolumemaynotbeconsidered
+32filtersofsize5×5×16,and32filtersofsize5×5× as noise because a company’s stocks may not be traded
+32,respectively,allwithstride1,zeropaddingandfollowed on some days or in some cases, stocks may be suspended
+by ReLU. Right after the second and fourth hidden layers, for trading for a certain period. But stocks that have been
+VOLUME7,2019 167263\n\n--- PAGE 5 ---\nJ.Leeetal.:GlobalStockMarketPredictionBasedonStockChartImagesUsingDQN
+suspendedformorethan25%oftheentiretestingperiodare time t +1. In other words, Lc is simply the daily return of
+t
+definitely abnormal, and may indicate that the data of the company c from time t to time t +1. In Fig. 1, chart Sc is
+t
+givencompanyiserroneous.Thus,excludingsuchcompanies shownastheonlyinputtoourCNNbecausethescalarvalue
+doesnotunderminethevalidityofourwork. LcisusedwithourCNNoutputtocalculatereward.Butinthe
+t
+After downloading and eliminating noisy data, the entire actualtrainingandtestprocedure,ourCNNreceivesaW by
+datasetisdividedintothetrainingsetandtestset.Thetraining W matrixofcompanycontimet asinputSc andoutputsan
+t
+set contains only US market data collected over a five-year action based on Sc. The reward for this action is calculated
+t
+period(Jan.2001-Dec.2005)fromapproximately1500com- using the scalar value Lc. Equation (1) calculates Lc where
+t t
+paniesthatareincludedintheRussell3000Index(Thefirst Prccindicatestheclosingpriceofcompanycattimet.
+t
+half of 2018). Only about half of the companies listed in
+Lc =100×(Prcc −Prcc)/Prcc (1)
+the Russel 3000 index in the first half of 2018 had data t t+1 t t
+from Jan. 2001 to Dec. 2005. Approximately 80% of the While generating Lc, we applied two simple methods for
+t
+trainingsetisactuallyusedfortrainingourmodelandabout training our model. First, we bounded the values of Lc
+t
+20%isusedforoptimizingthehyperparameters.Thetestset between−20%and20%topreventexcessiverewardsfrom
+containsdatafrom31countriesincludingtheUS,whichwas noisy data. Though we tried to remove noisy data, there
+collected over a 12-year period (Jan.2006-Dec.2017). The may still be some noisy data. Since (1) involves division,
+testsetisfurtherdividedintofour-yearintervalsasfollows: the value of Lc can easily change when an extremely small
+t
+(2006-2010), (2010-2014), (2014-2018). Every four years, orpotentiallyincorrectvalueisassignedtotheclosingprice.
+the top liquid N companies are selected from each country ByboundingthevaluesofLc,wecouldminimizetheimpact
+t
+fortheexperiment.Valuesof3000,500,and100areinitially of such undesirable cases. In addition, we conducted more
+assigned to N for US, developed countries, and emerging experiments with less tight bounds (50%, 100%) but there
+countries,respectively.Thevaluesareselectedbasedonmar- wasnonotablechangeintheresults.Second,forthetraining
+ket capitalization and the number of available companies in set (not the test set), we neutralized the daily return Lc to
+t
+each country. All the available companies were used if the addressthedataimbalanceproblem.Inotherwords,thedaily
+number of valid companies were less than initial N value. returnaveragedovertheentiretrainingsetissubtractedfrom
+Infurtherexperiments,wealsotestedourmodelonthedata each daily return Lc. If we sample stock market data for a
+t
+ofthemostliquidN companiesfromeachcountry.Values longperiod,thedatausuallybecomesimbalancedbecausethe
+L
+of1000,200,and40areassignedtoN fortheUS,developed markettendstogoup.Sothedatausuallyhasmorepositive
+L
+countries, and emerging countries, respectively. The top N values than negative values. Although the degree of imbal-
+andN liquidcompaniesareselectedeveryfouryearsbased anceinthestockmarketdataisnotthatsignificant,wefound
+L
+on the data collected over last 30 business days prior to the thatneutralizingtheimbalanceimprovesourtrainingprocess.
+firstdayineachtestset.Forexample,thetopNandN liquid Table1summarizestheinformationaboutthedatasetusedin
+L
+companiesfromJan.2006toDec.2009wereselectedbased our experiments. The number of available companies from
+ondatacollectedfromNov.15,2005toDec.31,2005.Not eachcountryislistedincolumnCom#.Thenumberofcom-
+allcompanieshaveall12yearsofdata.Thecompanieslisted paniesactuallyusedinourexperimentsislistedincolumns
+inJan.2010havedatastartingfromJan.2010.Socompanies N andN L .Thetotalnumberofdatausedinourexperiments
+thatwerelistedintheexchangemarketfortheentirefour-year islistedincolumnData#.ThecolumnAvgliststheaverage
+period were used for that testing period. In other words, all dailyreturn(inpercentage)ofthebuyandholdportfoliosofa
+companies used in the testing period (Jan.2006-Dec.2009) givenperiod.AsshowninthefirstrowofTable1,thereturn
+werelistedbeforeJan.2006(strictlyspeaking,Nov.15,2005) average of the training set is 0 because we neutralized the
+andwerestilllistedintheexchangemarketafterDec.2009. trainingset.ThecolumnStdliststhestandarddeviationsof
+Inourexperiments,weuseddailyclosingpriceandvolume dailyreturns.ThecolumnExcessRateliststhepercentageof
+datadownloadedfromYahooFinance,andweconvertedthe data with the absolute value of Lc, which originally had a
+t
+rawdatatoinputdataasfollows.Asingleinput(corresponds valuelargerthan20%beforebounding.
+toasingledayofonecompany)consistsoftwoparts:input Ourtrainingandtestsetsareintheformofamatrix.For
+chartSc andscalarvalueLc.Thesuperscriptcandsubscript example,thetrainingsetconsistsofN×T datapointswhere
+t t
+tindicatecompanycandtimet,respectively.Theinputchart N is ≈1500 and T is ≈1000 (number of business days in
+ScisaW byW matrixinwhichallelementsareeither0or1. fouryearswhichis80%ofentiretrainingset).Thetestsetis
+t
+The W by W matrix consists of the last W days of closing formattedinthesamewaywithdifferentvaluesofN andT.
+price and volume data of a single company. For example,
+theinputchartofcompanycattimet containsclosingprice D. TRAININGPROCESS
+andvolumedatafromtimet−W +1totimet ofcompany The standard Q-learning algorithm is based on the Bellman
+c.Likementionedearlier,whenclosingpriceandvolumeare equation, and iteratively updates its action value based on
+included in a chart, the values of closing price and volume the assumption that if an action value is optimal then it
+aremin-maxnormalizedoverlastW days.Thescalarvalue satisfiestheBellmanequation.TheBellmanequationdefines
+Lc represents the price change in percentage from time t to the relationship between the current action value Q(s,a)
+t
+167264 VOLUME7,2019\n\n--- PAGE 6 ---\nJ.Leeetal.:GlobalStockMarketPredictionBasedonStockChartImagesUsingDQN
+TABLE1. Datastatisticsfrom31countries.Thefirstrowliststhetrainingsetthatcontainsdatacollectedovera5-yearperiod(2001-2006)fromtheUS,
+andallotherrowslistthetestsetcollectedovera12-yearperiod(2006-2018).
+and the subsequent action value Q(s(cid:48),a(cid:48)). The loss func- actiona,respectively.Likewise,inputchartandoutputaction
+tionisderivedfromthisequation.Ourtrainingprocessuses attimet +1alsorefertosubsequentstates(cid:48) andactiona(cid:48),
+the following two methods of DQN: experience replay and respectively.Asmentionedearlier,outputρ inFig.1,which
+parameterfreezing.Ourlossfunctionisdefinedin(2).Weuse isthe outputofour CNN,is theactionvalue vectorofeach
+the Adam optimizer [37] to perform a gradient step on element which corresponds to each Long, Neutral, or Short
+Loss(θ)withrespecttoparametersθ.Forbetterunderstand- action. The term Q(s,a;θ) is a scalar value that represents
+ing, the batch size is omitted in (2) so the loss function can the action value of action a given state s using our CNN
+beinterpretedaslosscalculatedfromasingleexperience. parameterizedbyθ.Thus,givenstates,ifactionaisShort,
+then Q(s,a;θ) exactly corresponds to output ρ[3] from our
+Loss(θ)=[r +γmaxQ(s (cid:48),a (cid:48);θ∗ )−Q(s,a;θ)]2 (2) CNNparameterizedbyθ.Here,thenetworkparametersθand
+a(cid:48)
+targetnetworkparametersθ∗ aremaintainedthroughoutthe
+where s, a, r, s(cid:48), and a(cid:48) refer to current state, action, trainingprocesstoimplementtheparameterfreezingmethod.
+reward, subsequent state, and subsequent action, respec- Bothθ andθ∗ arerandomlyinitializedwiththesamevalue
+tively, and γ denotes the discount factor. New symbols are inthebeginningofthetrainingstage.Intheoriginalversion
+used to maintain consistency with the standard Q-learning of the parameter freezing method, the optimizer performs a
+algorithm used in previous works. In Fig. 1, input chart gradientsteponLoss(θ)withrespecttothenetworkparam-
+and output action at time t correspond to state s and eters θ at every iteration, and no gradient step is performed
+VOLUME7,2019 167265\n\n--- PAGE 7 ---\nJ.Leeetal.:GlobalStockMarketPredictionBasedonStockChartImagesUsingDQN
+with respect to the target network parameters θ∗. Target an experience generated from a new company. Randomly
+networkparametersθ∗ areonlyupdatedateveryC iteration generatingexperiencesandtakingagradientstepateveryB
+bycopyingparametersθ toθ∗. iteration are done to help our model use many experiences
+Although our training algorithm is based on the standard uniformlygeneratedfromtheentiretrainingset.
+Q-learningalgorithm,ouralgorithmdiffersinthefollowing Thetrainingalgorithmgeneratesexperiencee atbthitera-
+b
+ways. Unlike the standard Q-learning algorithm, our algo- tionandstoresitinthememorybuffer.Experienceissimplya
+rithmneedsinformationaboutthepreviousactiontocalculate tupleofthecurrentstate,action,reward,andsubsequentstate,
+thecurrentreward.Rewardrc iscalculatedasbelow.Super- i.e.,(S,A,RandS(cid:48)).Thealgorithmfirstrandomlyselectsa
+t
+scriptcandsubscriptt areaddedin(3)anddenotecompany dataindex(candt)fromthetrainingset.Next,the (cid:15)-greedy
+candtimet,respectively. policy (either randomly selects an action with probability (cid:15)
+oractsgreedily)isusedasthebehaviorpolicyonstatesc
+rc =ac×Lc−P×|ac−ac | (3) t−1
+t t t t t−1 and sc to obtain the previous action ac and the current
+t t−1
+where rc, Lc and ac are reward, next day return, and action actionac.Whenimplementingthebehaviorpolicy,value(cid:15)is
+t t t t
+of company c at time t, respectively. Scalar value Lc in (3) initializedto1andgraduallydecrementeduntilitreachesthe
+t
+and that in (1) are exactly the same term. Also, P denotes minimumvalue(cid:15) .Rewardsarecalculatedbasedonprevious
+m
+thetransactionpenalty.Ourmodelassignsavalueof1,0or andcurrentactionsandLc,thenthetuple(S,A,RandS(cid:48))is
+t
+−1 to ac for Long, Neutral, or Short actions respectively, assignedtoexperiencee .Theexperiencee isstoredinthe
+t b b
+for company c at time t. Thus, we can interpret the first memory buffer. At every B iteration, the minibatch of size
+termontherightsideof(3)astheearnedprofitbychoosing β israndomlysampledfromthememorybufferandusedto
+action given state. The second term on the right side of (3) calculateLoss.AgradientstepistakentominimizeLosswith
+refers to transaction costs when the model changes position respecttoparametersθ.Thetargetnetworkparametersθ∗are
+at time t. Without some penalty, the model could change updated every B × C iteration. The full training algorithm
+positionstoofrequently,whichwouldincurhightransaction is stated in Algorithm 1. Also, the list of hyperparameters
+costs in real practice. Equation 3 indicates the model needs mentionedinthispaperisprovidedinTable2.
+to know the previous action ac to calculate the current
+t−1
+reward.Thepreviousactionac giventhepreviousstateis E. SOURCECODEAVAILABILITY
+t−1
+alsochosenbyimplementingthe(cid:15) -greedypolicy.Unlikein Our source code used in our experiments is available
+thestandardQ-learningmethod,inourmethod,thenextstate at https://github.com/lee-jinho/DQN-global-stock-market-
+isnotaffectedbythecurrentaction.Thus,whenperforming prediction/.Sincetheconverteddata(chartimagedata)that
+experiencereplay,ourtrainingalgorithmneedstoobtainthe was used as input data in our experiments is too large to be
+previousstateandimplementthe(cid:15) -greedypolicytoobtain uploaded to the online repository, only the sample data is
+thepreviousaction. available. The entire dataset can be provided by the corre-
+Next,wemodifiedtheexperiencereplayintroducedinthe spondingauthoruponrequest.
+previous work. First, our model not only samples random
+batchesfromthememorybuffertotakeagradientsteponthe IV. EXPERIMENTS
+lossfunctionbutitalsorandomlygeneratesanexperienceat A. PORTFOLIOCONSTRUCTION
+everyiterationtostoreitinthememorybuffer.Second,our Our CNN introduced in the previous section basically takes
+modelupdatesparametersθ everyBiteration,andnotevery asinglechartimageasinputandoutputsanactionvaluefor
+iterationliketheoriginalversion.Inotherwords,ourmodel a single company at time t. But in experiments, we have to
+storesanexperienceinthememorybufferateveryiteration, dealwithmorethanonecompany.Todealwithmorethanone
+updates the network parameters θ at every B iteration by company,weconstructedalengthNportfoliovectorαwhich
+taking a gradient step on the loss function, and updates the satisfies (cid:80)N |α[c]| = 1.0 based on the output vectors of
+c=1
+target network parameters θ∗ at every B × C iteration by ourCNN.N isthetotalnumberofcompanies.Attimet,our
+copyingθ toθ∗.Wemodifiedtheoriginalversionofexperi-
+CNN produces the predictions for N companies instead of
+ence replay to prevent our model from updating parameters one. The portfolio is constructed based on the following N
+θ for too many iterations with experiences generated from outputs: ρ and η where 1 ≤ c ≤ N. Thus, the portfolio
+c c
+only a few companies. As mentioned earlier, we use 80% for N companies is reconstructed every day as done for a
+of our entire training set to actually train our model; our singlecompany.Theportfolioweightassignedtocompanyc
+trainingsetcontainsdataonapproximately1500companies, (α[c])representstheportionofthetotalassetthatshouldbe
+whichwascollectedover1000days(total≈1,500,000).The investedintocompanyc.Vectorsρ andη alsorepresentan
+c c
+original version of experience replay generates experiences actionvalueandonehotvectorforcompanyc,respectively.
+and stores them in the memory buffer by the order of input Note that vector α can have a negative value, which means
+sequence (one company at a time). Assuming that the size a Short position was taken on the company. For example,
+ofthememorybufferis1000,thememorybufferhasexperi- assumingthatthetotalassetis1.0,α[c] = −0.008indicates
+encesfromonlyoneortwocompaniesovertheentiretraining thatourCNNistakinga0.008Shortpositiononcompanycat
+period.Itwilltakeapproximately1000iterationstoobserve timet.Theremaybemultiplewaystoassignweightstoeach
+167266 VOLUME7,2019\n\n--- PAGE 8 ---\nJ.Leeetal.:GlobalStockMarketPredictionBasedonStockChartImagesUsingDQN
+Algorithm1TrainingAlgorithm averagezero.Thesubscriptnisaddedtorepresentthemarket
+1: InitializememorybuffertocapacityM neutralportfolio.Becausethemarketneutralportfoliotakes
+2:
+Initializenetworkparametersθ
+the same number of Long and Short positions every day,
+3:
+Initializetargetnetworkparametersθ∗ =θ
+its return has a much lower correlation with the average
+4: Initialize(cid:15) =1 market return than the return of the non-neutral portfolio;
+5: forall b=1,maxiter do hence,theportfolioisrelativelyfreefromoverallmarketrisk.
+6: c←randomlychosenindex Inourexperiments,wemeasuredthecorrelationbetweenour
+7: t ←randomlychosenindex market neutral portfolio and the average market return. The
+8: Withprobability(cid:15),ac t−1 ←randomaction resultsareshowninTable3.
+9: otherwiseac t−1 ←m
+a
+axQ(sc t−1 ,a;θ)
+10: Withprobability(cid:15),ac t ←randomaction Algorithm2MarketNeutralPortfolio
+11: otherwiseac t ←maxQ(sc t ,a;θ) 1: Initializeα n ←0
+a
+12: S← sc t 2: forall c do
+13: A←ac t 3: if η c [1]==1then
+14: R←ac t ×L t c-P×|ac t -ac t−1 | 4: α n [c]←1
+15: S’←sc t+1 5: elseif η c [3]==1 then
+16: Sete b ←(cid:8) S,A,R,S’ (cid:9) 6: α n [c]←−1
+17: Storeexperiencee b inmemorybuffer 7: endif
+18: if (cid:15) >(cid:15) m then 8: endfor
+19: (cid:15) ←(cid:15)×0.999999 9: µ n ← N 1 (cid:80)N c=1 α n [c]
+20: endif 10: α n [c]←α n [c]−µ n forallc
+21: if Memorybufferisfull then 11: (cid:54) n ←(cid:80)N c=1 |α n [c]|
+22: Delete the oldest experience from the memory 12: α n [c]←α n [c]/(cid:54) n forallc
+buffer
+23: endif
+One hot vector η is used when constructing the market
+24: ifb%B==0then c
+25: Randomsampleminibatchofsizeβ frommemory neutral portfolio vector α n . Steps to create the market neu-
+tral portfolio are described in Algorithm 2. First, for com-
+buffer
+pany c, a scalar value of 1, 0, or −1 is assigned to α [c]
+26: Loss←0 n
+for Long, Neutral, and Short actions, respectively, based on
+2 2 2 9 7 8 : : : for L S a o et l s l s S k k , ← i A n k m , i R L n o k ib , ss a S t k (cid:48) + ch ← [R d fr k o om + e γ k m a axQ(S k (cid:48),a;θ∗) − v i e s a e c c s h t u o b r e t l r η e a c m c . t e e T n d h t e f o r n o f , m α th n e ea i m s ch e d a i e n v l i e d o m e f d e v n e b t c y t o o f t r h t e ( h µ e s n u v m e = ct o o f r N 1 t α (cid:80) he n . N c a = F b 1 i s α n o a n l l u [ l c t y ] e ) ,
+Q(S k ,A k ;θ)]2 value of the vector’s element ((cid:54) = (cid:80)N |α |) to make
+n c=1 n[c]
+30: endfor sure that the portfolio satisfies (cid:80)N |α | = 1.0 every
+31:
+Loss←Loss/β
+day.
+c=1 n[c]
+32: PerformgradientsteptominimizeLosswithrespect Toevaluatetheperformanceofourmarketneutralportfo-
+totheparametersθ
+lio, we conducted various types of experiments. The annual
+33: endif returnandthereturnpertransactionpriortotransactioncosts
+34: if b%(B×C)==0then are reported in Table 3. Also, the risk of our market neutral
+35:
+θ∗ ←θ
+portfolio is measured using the Sharpe ratio [38], [39] and
+36: endif the maximum drawdown [40], both of which are reported
+37: endfor in Table 4. The Sharpe ratio is a commonly used measure
+andiscalculatedbydividingthemeanoftheexcessreturnby
+thestandarddeviationoftheexcessreturn.WeusedtheUS
+companyevenifweusethesameoutputofourCNN.Inour 13-weekTreasurybillformeasuringtheexcessreturnofour
+experiments,weusedtwomethodsthatwereusedinprevious marketneutralportfolio.Themaximumdrawdownmeasures
+worksandrealpracticeforcreatingportfolios.Weconducted the portion of an asset that could be lost during an entire
+variousexperimentswiththeportfolioswecreated,whichare testingperiod.Sothemaximumdrawdownissimplytheloss
+describedinthefollowingsubsections. fromapeaktoatroughofaportfolio.Theexactformulacan
+befoundin[38]–[40].
+B. MARKETNEUTRALPORTFOLIO These results in Table 3 and Table 4 show that our
+First, we use the market neutral portfolio which takes the approach generally obtains good performance in most of
+samenumberofLongandShortpositionseveryday.Inother the stock markets worldwide during most of the testing
+words, the portfolio satisfies (cid:80)N α = 0 every day. periods.Exceptforafewtestingperiods,ourmarketneutral
+c=1 n[c]
+The term ‘‘neutralize’’ could be interpreted as making the portfoliogenerallyyields≈a10to100percentannualreturn
+VOLUME7,2019 167267\n\n--- PAGE 9 ---\nJ.Leeetal.:GlobalStockMarketPredictionBasedonStockChartImagesUsingDQN
+TABLE2. Listofhyperparametersmentionedinthepaper.Hyperparameteroptimizationisdoneusing20%ofthetrainingset.
+TABLE3. Resultsofthemarketneutralportfolioona4-yearintervalpriortotransactioncosts.ThecolumnAccliststhepredictionaccuracyaveraged
+overanentiretestingperiod(2006-2018).ThecolumnTR#liststheaveragenumberoftransactionsofeachcompanyperyear.TheperTRcolumnslistthe
+returnpertransactioninpercentage.TheAnnualcolumnslisttheannualreturnsinpercentage.Thecorrelationbetweenthereturnsofourmarketneutral
+portfolioandtheaveragemarketreturnsareshownintheCorcolumns.Thelastrowliststheoverallaverageof31countries.
+prior to transaction costs or has a Sharpe ratio of ≈2.0 to companiesisverysmall,suchasAURandIRL,themaximum
+10.0 in developed countries as well as in emerging coun- drawdown of our market neutral portfolio is larger
+tries. But in some countries where the number of candidate than10%.
+167268 VOLUME7,2019\n\n--- PAGE 10 ---\nJ.Leeetal.:GlobalStockMarketPredictionBasedonStockChartImagesUsingDQN
+TABLE4. TheSRcolumnslisttheannualizedSharperatiosofourmarketneutralportfolio.TheMDDcolumnslistthemaximumdrawdownsofour
+marketneutralportfolio.Themaximumportfolioweightassignedtoonecompanyforeach4-yearperiodisalsolistedintheMWcolumns.
+Also,theabsolutevalueofthemaximumportfolioweight Although our model is not designed for classification
+assigned to one company during the testing period (the problems, we also calculated the prediction accuracy of our
+columnsMW)isreportedinTable4.Forexample,thevalue market neutral portfolio for further understanding. For sim-
+0.0021inthefirstrowofthecolumnMWduringtheperiod plicity,theactionNeutralisignoredandpredictionaccuracy
+of 2006-2010 indicates that the largest absolute value of is calculated based on only Long or Short actions taken.
+the portfolio weight assigned to one company during the Only when the next day’s return is positive and the current
+periodof2006-2010is0.0021,assumingthatthetotalasset actionisLongorwhenthenextday’sreturnisnegativeand
+is 1.0. Thus, about 0.21 %, at most, of the total asset the current action is Short, the action is considered correct.
+is assigned to one company during the 2006-2010 period Then the prediction accuracy is calculated by dividing the
+in the US. As shown in the column MW in Table 4, numberofcorrectactionsbythetotalnumberofcorrectand
+except for a few countries with a small number of can- wrong actions. The results are provided in the column Acc
+didate companies, the market neutral portfolio distributes of Table 3. As the results show, the prediction accuracy is
+the asset to most of the candidate companies in most of slightly higher than 0.5 in most cases, even when the port-
+the countries during most of the testing period. In other folioyieldsaconsiderablyhighannualreturn.Theseresults
+words, the profit of the market neutral portfolio does not indicate that our model focuses on the patterns that yield
+come from a small number of extremely well performing relativelyhighrewards,ratherthanonallinputpatternsthat
+companies. yieldrelativelylowrewards.
+VOLUME7,2019 167269\n\n--- PAGE 11 ---\nJ.Leeetal.:GlobalStockMarketPredictionBasedonStockChartImagesUsingDQN
+C. TOP/BOTTOMKPORTFOLIO Table 5 compares the overall performance of the
+Next,weusethetop/bottomKportfolio,whichtakesaposi- top/bottomKportfoliowiththeaverageannualmarketreturn.
+tiononlywhenthesignalisstrong.Inotherwords,ourCNN Theresultsgenerallyshowthatwhentheportfoliodistributes
+takesaLongpositionforthetopK%ofcompanies,aShort moreofitsassettoasmallernumberofcompaniesthathave
+position for the bottom K% of companies, and a Neutral largeractionvalue,theannualreturnincreases.Althoughthe
+position for the others each day based on vector ρ , which transaction costs are not included in the results, the results
+c
+is another output of our CNN. Note that this portfolio also showthattheannualreturnismuchhigherthantheaverage
+satisfies (cid:80)N α = 0 (market neutral). The difference market return in most countries for the majority of the
+c=1 s[c]
+is that the top/bottom K portfolio distributes its asset to time period. The average tendency is also shown in Fig. 2.
+only 2 × K% companies. To construct this portfolio, first, Fig.2(a)showstheresultsofcountries,withrelativelylarge
+subtractρ [3]fromρ [1]andusethisvaluetodecidewhich market capitalization, where an initial N value of 3000 or
+c c
+company to take position. Note that each element of vector 500isusedintheexperiments(12countriestotal).Fig.2(b)
+ρ representstheactionvalueofcorrespondingaction.Ifwe showstheresultsofothercountries(19countriestotal),which
+c
+takeacloserlook,thevalue(ρ [1]−ρ [3])isthedifference were obtained by our model which used an initial N value
+c c
+between the expected cumulative return of the Long action of100.TheresultsclearlyshowthatdecreasingK increases
+and the expected cumulative return of the Short action of theannualreturn.
+company c at time t. Intuitively, this value indicates how
+much the stock price of company c will increase at time D. STATISTICALTESTS
+t+1.Basedonthisvalue(ρ [1]−ρ [3]),avalueof1.0is Forstatisticaltests,weconstructedonerandommarketneu-
+c c
+assignedtoα [c]forthetopK%ofcompanies(whichhave tral portfolio and three random top/bottom K portfolios.
+s
+abiggervalue)and−1.0isassignedtoα [c]forthebottom We compared the performance of random portfolios with
+s
+K%ofcompanies(whichhaveasmallervalue).Asdonein that of our portfolios to verify the statistical significance of
+the market neutral portfolio above, we divide each element our results. Since the number of companies and the type
+of α by the sum of the absolute value of the element of of portfolio affect the standard deviation of the return on a
+s
+α ((cid:54) = (cid:80)N |α |) and use this as the top/bottom K portfolio, each of the four portfolios (neutral, K = 20,10,
+s s c=1 s[c]
+portfolio.Thesubscriptsisaddedtorepresentthetop/bottom and5)wastestedintheUS,developed,andemergingcoun-
+K portfolio. Steps to create the top/bottom K portfolio are tries (initial N = 3000, 500, and 100) over the entire
+describedinAlgorithm3. testing period. 10,000 simulations were conducted for each
+experiment, and the mean µ and standard deviation σ of
+the annual return were calculated. Random portfolios were
+Algorithm3Top/BottomKPortfolio
+createdasfollows.Avaluebetween−1and1wasrandomly
+1: Initializeα s ←0
+selected, neutralized, and divided by the sum of absolute
+2: forall c do
+values to construct the random market neutral portfolio α
+3: if ρ c [1]−ρ c [3]isinthetopK% then n
+using the same method mentioned in the Market Neutral
+4: α s [c]←1 Portfolio section. So α is a randomly weighted portfolio
+5: elseif ρ c [1]−ρ c [3]isinthebottomK% then which satisfies (cid:80)N α n = 0 and (cid:80)N |α | = 1.0.
+6: α s [c]←−1 Therandomtop/bo c t = to 1 m n K [c] portfoliosα w c e = r 1 eal n s [ o c] generated
+7: endif s
+inasimilarway.K%ofrandomlyselectedcompaniestooka
+8: endfor
+9: (cid:54) s ←(cid:80)N c=1 |α s [c]| L pa o n n i g es p t o o s o i k tio a n S a h n o d rt t p h o e s o it t i h o e n r .L K i % ket o h f e r p a o n r d t o fo m li l o y s s o e f le o c u t r ed m c o o d m el - ,
+10: α s [c]←α s [c]/(cid:54) s forallc
+the random market neutral portfolio and the three random
+top/bottomKportfolioswerealsoreconstructedeveryday.
+The main purpose of testing the performance of the The return of a portfolio is generally assumed to be nor-
+top/bottomKportfolioisasfollows.WeusedtheQ-learning mallydistributed,sowecalculatedZ-scoresforthestatistical
+algorithm for training, which uses an action value that cor- test.TheresultsareprovidedinTable6.InTable6,µandσ
+responds to the expected cumulative rewards of an action. denotethemeanandstandarddeviationoftheannualreturnof
+Inthissense,alargeractionvalueoftheLong(Short)position therandomportfolios,respectively.Sinceallthefourrandom
+should indicate more profit the model will receive if the portfolios(neutral,K =20,10,5)areactuallymarketneutral,
+modeltakesaLong(Short)position.SoifourCNNistrained µiszero.Thestandarddeviationσ tendstoincreaseasKand
+properly, the top/bottom K portfolio that takes a position N becomesmaller;K andN aresmallerwhentheportfolio
+based on the subtracted value (ρ [1]−ρ [3]) should yield distributes its asset to a smaller number of companies. The
+c c
+moreprofitthanthemarketneutralportfoliothatdistributes columns µ and Z-score list the average annual returns of
+assettoallcompanies.Thus,bythistest,weareabletoshow ourportfoliosandZ-scores,respectively.Astheresultsshow,
+thatourCNNisnotonlycapableofchoosingthebestaction inmostcases,theaverageannualreturnsofourportfoliosare
+amongLong,Neutral,andShortactions,butalsocanassign usuallymorethan30-σ awayfromtheaverageannualreturns
+highervaluestomoreprofitableactions. ofrandomportfolios.
+167270 VOLUME7,2019\n\n--- PAGE 12 ---\nJ.Leeetal.:GlobalStockMarketPredictionBasedonStockChartImagesUsingDQN
+TABLE5. Comparisonoftheaverageannualreturnofthetop/bottomKportfolios(K=5,10,20)withtheaverageannualmarketreturn(thecolumns
+avg)priortotransactioncosts.TheaverageannualmarketreturnisthereturnofthebuyandholdportfoliowithassetuniformlydistributedtoN
+companies.
+E. CONSIDERINGTRANSACTIONCOSTS countries, respectively. Table 1 shows the exact number
+Inthissubsection,wedescribetheexperimentswheretrans- of companies (N and N L ) from each country used in our
+action costs are considered. In real practice, various types experiments.
+oftransactioncostsareappliedwhenanassetisreallocated. Before discussing the results, the transaction cost should
+Brokeragefees,transactiontaxes(insomecountries),orbid- beclearlydefined.Wedefinethetransactioncostasthecost
+ask spreads are some of the different types of transaction of a buy/sell transaction. For example, if a share is bought
+costs.However,sinceweareusingthedailyclosingpricedata at $100, and it is sold at $110, a profit of $9.9 instead of
+of 31 countries, considering all types of transaction costs is $10willbeearnedifthetransactioncostis0.1%.Notethat
+infeasible.Therefore,weconductedtwoexperiments.Inthe transactioncostisdifferentfromthevalue P inEquation3.
+first experiment, we assumed that the transaction cost is a TransactionpenaltyP worksliketransactioncost,butP isa
+certain percentage of the transaction amount. In the second fixed value applied only in training. The transaction cost in
+experiment, we tested our portfolios on the most liquid N
+theexperimentsisdenotedasζ.
+L
+companies and compared the results with that of the previ- Table7summarizestheresultsofthefirstexperiment.The
+ous experiments which used the most liquid N companies columnTypelists thetypesofportfolios(Neutral, K = 20,
+for testing our portfolios. Values of 1000, 200 and 40 are 10, 5). All 31 countries are categorized into three groups
+assigned to N for US, developed countries, and emerging US,DvandEmbasedontheirmarketcapitalization,where
+L
+VOLUME7,2019 167271\n\n--- PAGE 13 ---\nJ.Leeetal.:GlobalStockMarketPredictionBasedonStockChartImagesUsingDQN
+FIGURE2. Comparisonoftheaverageannualreturnsofthemarketneutralportfolioandtop/bottomKportfoliowiththe
+annualmarketaveragereturn.
+TABLE6. Statisticalresultsoftherandomportfolioscomparedtoourmarketneutral(NEU),top/bottomKportfolios.Theresultsarecalculatedand
+averagedovertheentiretestingperiod(12years).
+TABLE7. Theaverageannualreturnsoffourtypesofportfolios(neutral,K=20,10,and5)aftertransactioncosts(ζ)areapplied.Countriesaredivided
+intothreegroups(US,Dv,andEm)basedontheirmarketcapitalization.Thefirstrowliststhetestingperiods.
+the US, Dv, and Em groups have 1, 11, and 19 countries, over each testing period and Group. The transaction cost in
+respectively. The abbreviations Dv and Em correspond to percentageisdenotedbyζ.Forexample,thevalueof28.53in
+developedandemergingcountries,respectively.Alltheval- theupperleftcorneristheannualreturnofthemarketneutral
+ues in Table 7 are annual returns (in percentage) averaged portfolio,averagedover11developedcountriesfrom2006to
+167272 VOLUME7,2019\n\n--- PAGE 14 ---\nJ.Leeetal.:GlobalStockMarketPredictionBasedonStockChartImagesUsingDQN
+TABLE8. Comparisonoftheaverageannualreturnsoffourtypesofportfolios(neutral,K=20,10and5).ThecolumnsNlistaverageannualreturnof
+eachportfoliotestedonthemostliquidNcompanies.ThecolumnsNLlistaverageannualreturnofeachportfoliotestedonthemostliquidNL
+companies.Thefirstrowliststhetestingperiods.Thetransactioncostisnotapplied.
+2010whenatransactioncostof0.1%isapplied.Astheresults are trained using conventional supervised learning. We use
+show, the returns of all the portfolios in Table 6 decrease FC network, CNN, and LSTM network as our baselines for
+as the transaction cost increases. In addition, the column two reasons. First, recent state-of-the-art studies [27], [28]
+Return(06-18)showsthatthemarketneutralportfoliodidnot have applied different types of NNs to the stock prediction
+makeaprofitintheUS(ζ = 0.2)orindevelopedcountries problem and obtained good performance. Second, in the
+(ζ =0.3).Butthetop/bottomKportfoliosyieldaconsider- Introductionsection,westatedthatRLismoresuitableforthe
+able amount of return in developed and emerging countries stockpredictionproblem;hence,comparingtheperformance
+afteratransactioncostofζ =0.3isapplied.Thetop/bottom of FC network, CNN, and LSTM each trained using a con-
+K = 5 portfolio yields more than the average market return ventionalsupervisedlearningmethodwiththatofourmodel
+in23countrieswhenatransactioncostofζ =0.2isapplied, isnecessary.Wealsousethemomentumstrategyandmean
+andyieldsmorethantheaveragemarketreturnin17countries averageconvergenceanddivergence(MACD),bothofwhich
+whenatransactioncostofζ =0.3isapplied. arebasedonconventionaltechnicalanalysis,asourbaselines.
+Thesecondexperimentwasconductedsincethemoreliq- Abriefoverviewofthetrainingprocessandarchitecturesof
+uidcompaniesarerelativelyeasytotradeatthedesiredtime theNNbaselinesisprovidedbelow.
+and price. Four types of portfolios were tested on the more We used the same data used in our previous experiments
+liquidcompanies(N ).Table8comparestheresultsofusing for training and testing FC network, CNN, and LSTM net-
+L
+atopliquidN companies(columnsN )withtheresultsof work.Fiveyears(Jan.2001-Dec.2005)ofUSdataareused
+L L
+usingtheoriginaltopliquidN companies(columnsN).The for training (80%) and hyper-parameter tuning (20%). All
+datalistedincolumnsNofTable8areobtainedfromTables3 otherdataisusedfortesting.FCnetwork,CNN,andLSTM
+and5.ThecolumnsTypeandGroupinTable8listthetypes networkaretrainedusingsupervisedlearning.Basedonthe
+of portfolios and the categories of countries, respectively. next day’s return, the training data is equally divided into
+Table8showsthattheannualreturndecreaseswhentheasset the following classes: Long, Neutral, or Short. The entire
+isallocatedtoonlymoreliquidcompanies.Theannualreturn training set is sorted based on the next day’s return. The
+oftheportfoliosmaydecreasemoreiftheportfoliosallocate top 33.3% of training data with high returns are labeled as
+theassettoevenmoreliquidcompanies.Theresultsshowthat Long, the bottom 33.3% of training data with low returns
+it is more difficult for portfolios of more liquid companies are labeled as Short, and the others are labeled as Neutral.
+toyieldprofit.ButasthecolumnReturn(06-18)shows,our In the testing stage, evaluation metrics such as precision or
+portfoliostillyieldedprofitsintheUS,developedcountries, recall,whicharewidelyusedinclassificationproblems,were
+and emerging countries. Our top/bottom K = 5 portfolio not used to evaluate the performance of the NN baselines.
+yieldsmoreprofitthanthemarketaveragein28countries. To compare the performance of the NN baselines with that
+of our model, we constructed a market neutral portfolio
+using the output of the NN baselines. Since the NN base-
+F. COMPARISONWITHOTHERBASELINES lines are trained to classify the current input (closing price
+Inthissubsection,wecompareourmodelwithNNbasedand and volume data of the past W days) as Long, Neutral, or
+technical analysis based baselines. The NN baselines are as Short,thepredictedlabelofthecurrentinputcanbeconsid-
+follows:FCnetwork,CNN,andLSTMnetworkallofwhich ered as the action that has to be taken at the current time.
+VOLUME7,2019 167273\n\n--- PAGE 15 ---\nJ.Leeetal.:GlobalStockMarketPredictionBasedonStockChartImagesUsingDQN
+TABLE9. Performancecomparisonofourmodelandotherbaselines.Thefirstrowliststhetestingperiods.ThecolumnMethodsliststhebaselinesand
+ourmodel.MM12,MACD,FCN,CNN,LSTM,andOursdenotemomentumstrategy,meanaverageconvergenceanddivergence,fullyconnectednetwork,
+convolutionalneuralnetwork,LSTMnetwork,andourmodel,respectively.AllvaluesareannualreturnsaveragedovereachperiodandGroup.GroupAvg
+inthecolumnGroupdenotestheannualreturnsaveragedoverall31countries.
+We can construct a portfolio and evaluate the performance Thenetworkarchitectureandtheshapeofthematrixinputted
+of the portfolio using the same method discussed in the totheCNNarethesameasthoseofourmodel,exceptthatin
+previousPortfolioConstructionandMarketNeutralPortfolio theCNN,thesoftmaxfunctionisimplementedafterthefinal
+sections. FClayer.
+The network architectures of FC network, CNN, and Theconventionalmomentumstrategy,whichisintroduced
+LSTM network are as follows. The FC network consists of in [7], is a simple strategy of buying winners and selling
+four FC layers with 64 × 128, 128 × 64, 64 × 32, and losers.Thisstrategyisusedtorankallcandidatecompanies
+32 × 3, parameters respectively. Only the first three FC based on past returns; it takes a Long position on the top
+layersarefollowedbyabatchnormalizationlayerandReLU. 10%ofcompaniesandtakesaShortpositiononthebottom
+A softmax function is implemented after the final FC layer. 10% of companies. We tested the strategy in two different
+Avectorwithalengthof2×W isinputtedtotheFCnetwork; settings. In the first setting, companies are ranked based on
+theinputtedvectorconsistsofthemin-maxnormalizedclos- the last 3 months, and the asset is reallocated every month.
+ingpriceandvolumedataoverthelastW days.TheLSTM Inthesecondsetting,companiesarerankedbasedonthelast
+networkconsistsofoneLSTMlayerwhichisfollowedbya 12monthsandtheassetisreallocatedevery3months.Higher
+fullyconnectedlayer.TheLSTMlayerconsistsof64hidden performance was obtained in the second setting, and only
+units. The FC layer takes the last hidden vector from the the results from the second setting are reported in Table 9.
+LSTMlayer(vectorwithalengthof64)asinputandoutputsa MACD[41]isoneofthemostcommonlyemployedtechnical
+vectorwithalengthof3.Asoftmaxfunctionisimplemented indicatorsandconsistsoftheMACDlineandthesignalline.
+after the FC layer. The shape of the matrix inputted to the TheMACDlineiscalculatedbysubtractinga26day-period
+LSTM network is 2 by W, where each column corresponds moving average from a 12 day-period moving average. The
+toeachtimestepoftheLSTMnetwork.Therefore,themin- signal line is a 9 day-period moving average of the MACD
+maxnormalizedclosingpriceandvolumedataofeachdayis line. The most common MACD strategy used for trading
+inputateachcorrespondingtimestepoftheLSTMnetwork. stocks involves buying when the MACD line crosses above
+167274 VOLUME7,2019\n\n--- PAGE 16 ---\nJ.Leeetal.:GlobalStockMarketPredictionBasedonStockChartImagesUsingDQN
+TABLE10. Averageannualreturnsofportfoliosthatwerecreatedusingdifferenttypesofnetworkarchitectures,whicharelistedinthecolumn
+Architecture.Thefirstrowliststhetestingperiods.Theannualreturnsarecalculatedusingthemarketneutralportfolioandwithoutconsidering
+transactioncost.
+thesignallineandsellingwhentheMACDlinecrossesbelow 5×5×1,8filtersofsize5×5×8,16filtersofsize5×
+thesignalline. 5 × 8, and 16 filters of size 5 × 5 × 16, respectively, and
+Table 9 summarizes the results of our experiments. The are followed by two FC layers with 1024 × 16 and 16 ×
+resultsofNNbaselinesandoursareobtainedusingthemarket 3 parameters, respectively. The four convolutional layers of
+neutral portfolio. Each baseline is tested with (ζ = 0.1) L 6 32×64consistof32filtersofsize5×5×1,32filters
+and without (ζ = 0) transaction cost and the resulting ofsize5×5×32,64filtersofsize5×5×32,and64filters
+annualreturnisaveragedovereachgroupofcountries(US, ofsize5×5×64,respectively,andarefollowedbytwoFC
+developed, and emerging) as done in the previous subsec- layerswith4096×16and16×3parameters,respectively.
+tions. As the results show, the performance of our model is L 4 16×32 and L 4 32×64 each consist of two convo-
+betterthanthatoftheNNbaselinestrainedusingsupervised lutional layers and are followed by two FC layers. The two
+learning and conventional technical analysis. There are two convolutional layers of L 4 16×32 consist of 16 filters of
+main findings in this experiment. First, the performance of size5×5×1and32filtersofsize5×5×16,respectively,
+FC network and CNN is fairly high before transaction cost and are followed by two FC layers with 2048 × 32 and
+isincluded.Butasthecolumnsζ = 0.1indicate,theprofit 32×3parameters,respectively.Thetwoconvolutionallayers
+significantly decreases when transaction cost (ζ = 0.1) is of L 4 32×64 consist of 32 filters of size 5 × 5 × 1 and
+applied. If a naive supervised learning method for classi- 64filtersofsize5×5×32,respectively,andarefollowed
+fication problems is implemented, it could be difficult to by two FC layers with 4096 × 64 and 64 × 3 parameters,
+control the number of transactions, and the model could be respectively.
+trainedtoexcessivelychangepositions.Second,althoughthe As the results in Table 10 show, changing the network
+performanceoftheNNbaselinesisaffectedbythenumberof architectureaffectstheoverallperformanceofmodels.Also,
+layers, the model architecture, and other hyper-parameters, naively increasing the number of parameters or layers may
+the experimental results show that RL is generally more degrade the performance of our model. Even though the
+suitable and efficient than conventional supervised learning results in Table 10 show that changing the network archi-
+forsolvingstockpredictionproblems. tectureorinputsizedoesnotdrasticallyaffectperformance,
+using a suitable architecture and input size still helps to
+improveperformance.
+G. ROBUSTNESSVERIFICATION
+Inthissubsection,we testtherobustnessofourmodel.The
+marketneutralportfoliowascreatedandtestedonthesame V. DISCUSSION
+datausedinourpreviousexperimentsusingdifferentnetwork Inthiswork,weappliedDQNformakingglobalstockmarket
+architectures or different sizes of input (W = 16,8). The predictions. Unlike the previous works, we focused mainly
+resultsareshowninTable10.ThecolumnWliststheinput ondiscoveringpatternsfromstockchartimages,whichcould
+sizes. The column Architecture lists the symbol indicating yieldaprofitnotonlyinacountrywhosestockdatawasused
+differentnetworkarchitecturesusedinthisexperiment.Like fortrainingourmodelbutalsoinothercountries.Weshowed
+inprevioussubsections,allvaluesareaveragedoverthecor- that the investment activities of people from different coun-
+respondinggroupofcountries(US,developedandemerging). tries and cultures tend to be similar for certain price and
+Theexactdescriptionofthenetworkarchitecturesisprovided volume patterns. The results also showed that the RL based
+below.L 6 16×32isthearchitectureofourmodel,whichis DQNmethodismoresuitablethanconventionalsupervised
+describedintheNetworkArchitecturesection. learningmethodsforstockpredictionproblems.
+L 6 8×16andL 6 32×64eachconsistoffourconvolu- We conducted further experiments to bridge the gap
+tional layers and are followed by two FC layers. The four between our results from the experiment in the ideal cir-
+convolutionallayersofL 6 8×16consistof8filtersofsize cumstancesandrealpractice.Weconductedtheexperiments
+VOLUME7,2019 167275\n\n--- PAGE 17 ---\nJ.Leeetal.:GlobalStockMarketPredictionBasedonStockChartImagesUsingDQN
+where transaction costs were applied or the asset was dis- [15] C.-H.ParkandS.H.Irwin,‘‘Whatdoweknowabouttheprofitabilityof
+tributed to a more liquid universe (N ). Although increas- technicalanalysis?’’J.Econ.Surv.,vol.21,no.4,pp.786–826,2007.
+L
+[16] A. J.Patton,‘‘Are‘marketneutral’hedgefundsreallymarketneutral?’’
+ing the transaction cost reduced the profit generated by our
+Rev.FinancialStud.,vol.22,no.7,pp.2495–2530,Jul.2008.
+portfolios, our portfolios generally yielded a considerable [17] J.Bollen,H.Mao,andX.Zeng,‘‘Twittermoodpredictsthestockmarket,’’
+amountofprofitinmanycountries.Still,ourworkhassome J.Comput.Sci.,vol.2,no.1,pp.1–8,Mar.2011.
+[18] D. Huang, F. Jiang, J. Tu, and G. Zhou, ‘‘Investor sentiment aligned:
+limitations. By increasing transaction cost, our result shows
+Apowerfulpredictorofstockreturns,’’Rev.FinancialStud.,vol.28,no.3,
+thatourportfoliosdidnotmakeaprofitinsomewelldevel- pp.791–837,Mar.2014.
+oped countries such as the US. The profit also decreased [19] R.P.SchumakerandH.Chen,‘‘Textualanalysisofstockmarketprediction
+usingbreakingfinancialnews:Theazfintextsystem,’’ACMTrans.Inf.
+whenourportfoliosdistributedtheassettoonlyamoreliquid
+Syst.,vol.27,no.2,p.12,Feb.2009.
+universe (N ). Also, we were not able to consider bid-ask [20] Z. Da, J. Engelberg, and P. Gao, ‘‘In search of attention,’’ J. Finance,
+L
+spreads or calculate the actual amount of asset could be vol.66,no.5,pp.1461–1499,Oct.2011.
+[21] T.Preis,H.S.Moat,andH.E.Stanley,‘‘Quantifyingtradingbehavior
+managed,sinceweonlyhavedailyscaledata. infinancialmarketsusingGoogletrends,’’Sci.Rep.,vol.3,Apr.2013,
+Art.no.1684.
+VI. CONCLUSION [22] Y.LeCun,Y.Bengio,andG.Hinton,‘‘Deeplearning,’’Nature,vol.521,
+pp.436–444,May2015.
+We conducted numerous experiments to determine whether
+[23] R.S.SuttonandA.G.Barto,ReinforcementLearning:AnIntroduction.
+our model trained on certain patterns in stock charts from a Reading,MA,USA:MITPress,1998.
+singlecountrycanmakeaprofitnotonlyinthegivencountry [24] G. Atsalakis and K. P. Valavanis, ‘‘Surveying stock market forecasting
+techniques—PartII:Softcomputingmethods,’’ExpertSyst.Appl.,vol.36,
+but generally in all other countries. As our results show,
+no.3,pp.5932–5941,Apr.2009.
+our model trained in only the US market, also performed [25] R. C. Cavalcante, R. C. Brasileiro, V. L. F. Souza, J. P. Nobrega,
+well or even better in many other markets for the 12-year andA.L.I.Oliveira,‘‘Computationalintelligenceandfinancialmarkets:
+Asurveyandfuturedirections,’’Expert.Syst.Appl.,vol.55,pp.194–211,
+testing period. Based on this observation, artificial intelli-
+Aug.2016.
+gence and machine learning stock price forecasting studies, [26] L.TakeuchiandY.Y.A.Lee,‘‘Applyingdeeplearningtoenhancemomen-
+which have been conducted in only a single country so far, tum trading strategies in stocks,’’ Stanford Univ., Stanford, CA, USA,
+Workingpaper,Dec.2013.
+can be employed in global stock markets. In other words,
+[27] C. Krauss, N. A. Do, and N. Huck, ‘‘Deep neural networks, gradient-
+if the model structure, input feature, and training procedure boostedtrees,randomforests:Statisticalarbitrageonthes&p500,’’Eur.
+are satisfactory, the model does not have to be trained and J.Oper.Res.,vol.259,no.2,pp.689–702,Jun.2017.
+[28] T.FischerandC.Krauss,‘‘Deeplearningwithlongshort-termmemory
+testedinthesamemarket.Tothebestofourknowledge,our
+networksforfinancialmarketpredictions,’’Eur.J.Oper.Res.,vol.270,
+artificial intelligence based model, which is trained on the no.2,pp.654–669,2018.
+[29] S.HochreiterandJ.Schmidhuber,‘‘Longshort-termmemory,’’Neural
+dataofonlyasinglecountry,isthefirsttoobtainnumerous
+Comput.,vol.9,no.8,pp.1735–1780,1997.
+testingresultsonglobalstockmarkets. [30] Y.Deng,F.Bao,Y.Kong,Z.Ren,andQ.Dai,‘‘Deepdirectreinforcement
+learning for financial signal representation and trading,’’ IEEE Trans.
+REFERENCES NeuralNetw.Learn.Syst.,vol.28,no.3,pp.653–664,Mar.2016.
+[31] C.-F.TsaiandZ.-Y.Quan,‘‘Stockpredictionbysearchingforsimilarities
+[1] E.F.Fama,‘‘Efficientcapitalmarkets:Areviewoftheoryandempirical
+incandlestickcharts,’’ACMTrans.Manage.Inf.Syst.,vol.5,no.2,p.9,
+work,’’J.Finance,vol.25,no.2,pp.383–417,May1970.
+Jul.2014.
+[2] B.G.Malkiel,‘‘Theefficientmarkethypothesisanditscritics,’’J.Econ.
+[32] S.-J. Guo, F.-C. Hsu, and C.-C. Hung, ‘‘Deep candlestick predictor:
+Perspect.,vol.17,no.1,pp.59–82,2003.
+A framework toward forecasting the price movement from candlestick
+[3] N.BarberisandR.Thaler,‘‘Asurveyofbehavioralfinance,’’Handbook
+charts,’’inProc.9thInt.Symp.ParallelArchitectures,AlgorithmsPro-
+Econ.Finance,vol.1,pp.1053–1128,Jan.2003.
+gram.,pp.219–226,Dec.2018.
+[4] J.H.Kim,A.Shamsuddin,andK.P.Lim,‘‘Stockreturnpredictabilityand [33] V. Mnih, K. Kavukcuoglu, D. Silver, A. A. Rusu, J. Veness,
+theadaptivemarketshypothesis:Evidencefromcentury-longU.S.data,’’ M.G.Bellemare, A. Graves, M. Riedmiller, A. K. Fidjeland,
+J.EmpiricalFinance,vol.18,pp.868–879,Dec.2011. G.Ostrovski,S.Petersen,C.Beattie,A.Sadik,I.Antonoglou,H.King,
+[5] W.F.M.DeBondtandR.Thaler,‘‘Doesthestockmarketoverreact?’’ D.Kumaran,D.Wierstra,S.Legg,andD.Hassabis,‘‘Human-levelcontrol
+J.Finance,vol.40,no.3,pp.793–805,Jul.1985. through deep reinforcement learning,’’ Nature, vol. 518, pp.529–533,
+[6] N. Jegadeesh, ‘‘Evidence of predictable behavior of security returns,’’ Feb.2015.
+J.Finance,vol.45,no.3,pp.881–898,Jul.1990. [34] C.J.C.H.WatkinsandP.Dayan,‘‘Q-learning,’’Mach.Learn.,vol.8,
+[7] N. Jegadeesh and S. Titman, ‘‘Returns to buying winners and selling nos.3–4,pp.279–292,1992.
+losers:Implicationsforstockmarketefficiency,’’J.Finance,vol.48,no.1, [35] S. Loffe and C. Szegedy, ‘‘Batch normalization: Accelerating deep
+pp.65–91,Mar.1993. network training by reducing internal covariate shift,’’ Feb. 2015,
+[8] L.K.C.Chan,N.Jegadeesh,andJ.Lakonishok,‘‘Momentumstrategies,’’ arXiv:1502.03167.[Online].Available:https://arxiv.org/abs/1502.03167
+J.Finance,vol.51,no.5,pp.1681–1713,Dec.1996. [36] X.GlorotandY.Bengio,‘‘Understandingthedifficultyoftrainingdeep
+[9] J.S.AbarbanellandB.J.Bushee,‘‘Fundamentalanalysis,futureearnings, feedforward neural networks,’’ in Proc. Int. Conf. Artif. Intell. Statist.,
+andstockprices,’’J.AccountingRes.,vol.35,no.1,pp.1–24,1997. May2010,pp.249–256.
+[10] G. W. Schwert, ‘‘Anomalies and market efficiency,’’ Handbook Econ. [37] D. P. Kingma and J. Ba, ‘‘Adam: A method for stochastic optimiza-
+Finance,vol.1,pp.939–974,Jan.2003. tion,’’ Dec. 2014, arXiv:1412.6980. [Online]. Available: https://arxiv.
+[11] M.C.Jensen,‘‘Someanomalousevidenceregardingmarketefficiency,’’ org/abs/1412.6980
+J.FinancialEcon.,vol.6,pp.95–101,Sep.1978. [38] W. F. Sharpe, ‘‘Mutual fund performance,’’ J. Bus., vol. 39, no. 1,
+[12] S. M. Phillips and C. W. Smith, Jr., ‘‘Trading costs for listed options: pp.119–138,Jan.1966.
+Theimplicationsformarketefficiency,’’J.FinancialEcon.,vol.8,no.2, [39] W.F.Sharpe,‘‘TheSharperatio,’’J.PortfolioManage.,vol.21,no.1,
+pp.179–201,Jun.1980. pp.49–58,1994.
+[13] H.R.StollandR.E.Whaley,‘‘Transactioncostsandthesmallfirmeffect,’’ [40] M.Magdon-Ismail,A.F.Atiya,A.Pratap,andY.S.Abu-Mostafa,‘‘On
+J.FinancialEcon.,vol.12,no.1,pp.57–79,Jun.1983. themaximumdrawdownofaBrownianmotion,’’J.Appl.Probab.,vol.41,
+[14] A.W.Lo,H.Mamaysky,andJ.Wang,‘‘Foundationsoftechnicalanalysis: no.1,pp.147–161,Mar.2004.
+Computationalalgorithms,statisticalinference,andempiricalimplemen- [41] G.AppelandE.Dobson,UnderstandingMACD.Greenville,SC,USA:
+tation,’’J.Finance,vol.55,no.4,pp.1705–1765,Aug.2000. TradersPress,2008.
+167276 VOLUME7,2019\n\n--- PAGE 18 ---\nJ.Leeetal.:GlobalStockMarketPredictionBasedonStockChartImagesUsingDQN
+JINHOLEEreceivedtheB.S.degreeincomputer YOOKYUNG KOH received the B.S. degree
+science and engineering from Korea University, in mathematics from Korea University, Seoul,
+Seoul,SouthKorea,in2012,whereheiscurrently SouthKorea,in2017,wheresheiscurrentlypur-
+pursuingthePh.D.degreeincomputerscienceand suing the M.S. degree in computer science and
+engineering.Hisresearchfocusonapplyingstate- engineering.Hercurrentresearchinterestsinclude
+of-the-art machine learning algorithms to finan- deeplearningappliedtosocialmediaandrecom-
+cial time series problems, such as stock market mendationsystems.
+predictionproblem.
+JAEWOO KANG received the B.S. degree in
+computer science from Korea University, Seoul,
+South Korea, in 1994, the M.S. degree in com-
+puter science from the University of Colorado
+at Boulder, CO, USA, in 1996, and the Ph.D.
+degreeincomputersciencefromtheUniversityof
+Wisconsin–Madison,WI,USA,in2003.
+From 1996 to 1997, he was a Technical Staff
+Member with AT&T Labs Research, Florham
+Park, NJ, USA. From 1997 to 1998, he was a
+RAEHYUN KIM received the B.S. degree from TechnicalStaffMemberwithSaveraSystemsInc.,MurrayHill,NJ,USA.
+the Business School, Korea University, Seoul, From2000to2001,hewastheCTOandaco-founderofWISEngineInc.,
+SouthKorea,in2018,whereheiscurrentlypur- SantaClara,CA,USA,andSeoul.From2003to2006,hewasanAssistant
+suing the Ph.D. degree in computer science and ProfessorwiththeDepartmentofComputerScience,NorthCarolinaState
+engineering.Hisresearchinterestsfocusonstock University,Raleigh,NC,USA.Since2006,hehasbeenaProfessorwiththe
+marketpredictionandrecommendationsystems. DepartmentofComputerScience,KoreaUniversity.Healsoservesasthe
+DepartmentHeadfortheInterdisciplinaryGraduatePrograminBioinfor-
+maticswithKoreaUniversity.HeisjointlyappointedasaProfessorwiththe
+DepartmentofMedicine,SchoolofMedicine,KoreaUniversity.
+VOLUME7,2019 167277
